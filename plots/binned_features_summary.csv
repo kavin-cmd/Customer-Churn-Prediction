@@ -1,0 +1,5 @@
+,AgeGroup,BalanceGroup,SalaryGroup
+count,10000,10000,10000
+unique,5,5,4
+top,31-40,100K-150K,100K-150K
+freq,4451,3830,2555

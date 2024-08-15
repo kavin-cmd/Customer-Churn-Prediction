@@ -1,28 +1,34 @@
 import pandas as pd
 from sklearn.preprocessing import LabelEncoder, StandardScaler
+import numpy as np 
 
 # Load the dataset
-df = pd.read_csv("./datasets/Churn_Modelling.csv")
+df = pd.read_csv('./datasets/Churn_Modelling.csv')
 
-# Step 1: Identify numeric columns and fill missing values in them
-numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns
-df[numeric_cols] = df[numeric_cols].fillna(df[numeric_cols].median())
+# Fill missing values with median for numeric columns, except CreditScore and Geography
+df.fillna(df.median(numeric_only=True), inplace=True)
 
-# Step 2: Remove duplicates
-df.drop_duplicates(inplace=True)
+# Step 1: Keep CreditScore and Geography as they are
+# No transformations needed for these columns
 
-# Step 3: Anonymize customer surnames (optional)
-df['Surname'] = df['Surname'].apply(lambda x: 'Customer_' + str(hash(x) % 100000))
+# Step 2: Binning Age, Balance, and Estimated Salary
+# Define the bins and labels for Age
+age_bins = [18, 30, 40, 50, 60, 100]  # You can adjust these ranges as per your data
+age_labels = ['18-30', '31-40', '41-50', '51-60', '60+']
+df['AgeGroup'] = pd.cut(df['Age'], bins=age_bins, labels=age_labels, include_lowest=True)
 
-# Step 4: Encode categorical variables
-label_encoder = LabelEncoder()
-df['Gender'] = label_encoder.fit_transform(df['Gender'])  # Male: 1, Female: 0
-df['Geography'] = label_encoder.fit_transform(df['Geography'])
+# Define the bins and labels for Balance
+balance_bins = [-1, 50000, 100000, 150000, 200000, np.inf]  # Define appropriate ranges
+balance_labels = ['0-50K', '50K-100K', '100K-150K', '150K-200K', '200K+']
+df['BalanceGroup'] = pd.cut(df['Balance'], bins=balance_bins, labels=balance_labels, include_lowest=True)
 
-# Step 5: Feature scaling (for numerical variables)
-scaler = StandardScaler()
-numerical_cols = ['CreditScore', 'Age', 'Balance', 'EstimatedSalary']
-df[numerical_cols] = scaler.fit_transform(df[numerical_cols])
+# Define the bins and labels for Estimated Salary
+salary_bins = [0, 50000, 100000, 150000, 200000, np.inf]  # Define appropriate ranges
+salary_labels = ['0-50K', '50K-100K', '100K-150K', '150K-200K', '200K+']
+df['SalaryGroup'] = pd.cut(df['EstimatedSalary'], bins=salary_bins, labels=salary_labels, include_lowest=True)
+
+# Step 3: Drop the original columns that have been binned if they are no longer needed
+df.drop(['Age', 'Balance', 'EstimatedSalary'], axis=1, inplace=True)
 
 # Step 6: Save cleaned data
 df.to_csv('./datasets/cleaned_customer_churn.csv', index=False)
